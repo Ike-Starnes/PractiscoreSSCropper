@@ -31,8 +31,6 @@ namespace WpfApp1
          _bitmapImage = null;
       }
 
-      private static readonly int SEPARATOR_COLOR = 0xFA;
-      private static readonly int SEPARATOR_COLOR2 = 0xF6;
       private static readonly int STAGE_HEADER_COLOR = 0xEE;
       private static readonly int STAGE_BACK_COLOR = 0xFF;
 
@@ -121,12 +119,12 @@ namespace WpfApp1
                   row++;
                }
 
-               if ( (bitmapData[row * stride] == SEPARATOR_COLOR) || (bitmapData[row * stride] == SEPARATOR_COLOR2))
+               while ((row < writeableBitmap.PixelHeight) && (bitmapData[row * stride] != STAGE_BACK_COLOR) && (bitmapData[row * stride + 1] != STAGE_BACK_COLOR)) // Skip ahead to stage info
                {
                   row++;
                }
 
-               while ((row < writeableBitmap.PixelHeight) && (bitmapData[row * stride] == STAGE_BACK_COLOR) && (bitmapData[row * stride + 1] == STAGE_BACK_COLOR)) 
+               while ((row < writeableBitmap.PixelHeight) && (bitmapData[row * stride] == STAGE_BACK_COLOR) && (bitmapData[row * stride + 1] == STAGE_BACK_COLOR))  // We have found the stage info
                {
                   row++;
                   stageHeight = row - firstRow;
