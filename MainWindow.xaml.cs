@@ -31,9 +31,10 @@ namespace WpfApp1
          _bitmapImage = null;
       }
 
-      private static readonly int STAGE_HEADER_COLOR = 0x88;
-      private static readonly int STAGE_BACK_COLOR = 0xEE;
-      private static readonly int MAX_STAGE_HEIGHT = 275;
+      private static readonly int SEPARATOR_COLOR = 0xFA;
+      private static readonly int SEPARATOR_COLOR2 = 0xF6;
+      private static readonly int STAGE_HEADER_COLOR = 0xEE;
+      private static readonly int STAGE_BACK_COLOR = 0xFF;
 
       private string PickImageFile()
       {
@@ -94,30 +95,46 @@ namespace WpfApp1
          bitmapSource.CopyPixels(bitmapData, stride, 0);
 
          int stage = startStage;
+         int foundStages = 0;
 
          // Search the pixel data for the areas that hold the stage information
          for (int row = 0; row < writeableBitmap.PixelHeight; row++)
          {
+            //System.Diagnostics.Debug.WriteLine($"Row: {row}, Pixel: {bitmapData[row * stride]}");
+
             if ((bitmapData[row * stride] == STAGE_HEADER_COLOR) && (bitmapData[row * stride + 1] == STAGE_HEADER_COLOR)) // Found start of stage header
             {
+               if ((bitmapData[(row+1) * stride] != STAGE_HEADER_COLOR) && (bitmapData[(row + 1) * stride + 1] != STAGE_HEADER_COLOR)) // Actually found that blurry bit at the top after a scrolled screenshot (i.e. 2+ pages of stages)
+               {
+                  System.Diagnostics.Debug.WriteLine($"Skipping blurry bit found at row {row}");
+                  row += 3;
+                  continue;
+               }
+
                int firstRow = row;
                int stageHeight = 0;
-               while ((bitmapData[row * stride] == STAGE_HEADER_COLOR) && (bitmapData[row * stride + 1] == STAGE_HEADER_COLOR)) // While inside stage header, keep going
+               System.Diagnostics.Debug.WriteLine($"Found stage header at row {row}");
+
+               // Now we have found the stage info area, keep going until we reach next stage header
+               while ((row < writeableBitmap.PixelHeight) && (bitmapData[row * stride] == STAGE_HEADER_COLOR) && (bitmapData[row * stride + 1] == STAGE_HEADER_COLOR)) // While inside stage header, keep going
                {
                   row++;
                }
 
-               while ((bitmapData[row * stride] == STAGE_BACK_COLOR) && (bitmapData[row * stride + 1] == STAGE_BACK_COLOR)) // Now we have found the stage info area, keep going until we reach next stage header
+               if ( (bitmapData[row * stride] == SEPARATOR_COLOR) || (bitmapData[row * stride] == SEPARATOR_COLOR2))
+               {
+                  row++;
+               }
+
+               while ((row < writeableBitmap.PixelHeight) && (bitmapData[row * stride] == STAGE_BACK_COLOR) && (bitmapData[row * stride + 1] == STAGE_BACK_COLOR)) 
                {
                   row++;
                   stageHeight = row - firstRow;
-                  if (stageHeight > MAX_STAGE_HEIGHT)
-                     break;
                }
 
                int lastRow = row-1;
                System.Diagnostics.Debug.WriteLine($"Found stage {stage} at {firstRow} to {lastRow} with height = {stageHeight}");
-
+               foundStages++;
                // Copy the stage data into a new bitmap
                var stageData = new byte[stageHeight * stride];
                Int32Rect rect = new Int32Rect(0, firstRow, writeableBitmap.PixelWidth, stageHeight);
@@ -131,6 +148,9 @@ namespace WpfApp1
                stage++;
             }
          }
+
+         if (foundStages < 1)
+            MessageBox.Show($"No stages found!");
       }
 
       private void PickImage_Click(object sender, RoutedEventArgs e)
