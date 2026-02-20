@@ -31,7 +31,7 @@ namespace WpfApp1
          _bitmapImage = null;
       }
 
-      private static readonly int STAGE_HEADER_COLOR = 0xEE;
+      private static readonly int STAGE_HEADER_COLOR = 0xE0;
       private static readonly int STAGE_BACK_COLOR = 0xFF;
 
       private string PickImageFile()
